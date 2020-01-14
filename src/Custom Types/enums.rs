@@ -1,0 +1,4 @@
+enum WebEvent {
+  PageLoad,
+  PageUnload,
+}

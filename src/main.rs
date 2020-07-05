@@ -1,4 +1,12 @@
+use crate::List::{Cons, Nil};
+use rust_learning::kinds::PrimaryColor;
+use rust_learning::SecondaryColor;
+use rust_learning::{add_one, Counter};
 use std::fmt::{Debug, Display};
+use std::ops::Deref;
+use std::rc::Rc;
+use std::thread;
+use std::time::Duration;
 
 fn main() {
     let some_u8_value = Some(0u8);
@@ -35,6 +43,87 @@ fn main() {
 
     let v2: Vec<_> = v1.iter().map(|x| x + 1).collect();
     println!("v2: {:?}", v2);
+
+    let b = Box::new(5);
+    println!("b = {}", b);
+    let list = Cons(1, Box::new(Cons(2, Box::new(Cons(3, Box::new(Nil))))));
+
+    let x = 5;
+    let y = Box::new(x);
+    let z = MyBox::new(x);
+
+    assert_eq!(5, x);
+    assert_eq!(5, *y);
+    assert_eq!(5, *z);
+
+    let m = MyBox::new(String::from("Rust"));
+    hello(&m);
+
+    let c = CustomSmartPointer {
+        data: String::from("my stuff"),
+    };
+    drop(c);
+    let d = CustomSmartPointer {
+        data: String::from("other stuff"),
+    };
+    println!("CustomSmartPointers created.");
+
+    let a = Rc::new(RcList::Cons(
+        5,
+        Rc::new(RcList::Cons(10, Rc::new(RcList::Nil))),
+    ));
+    let b = RcList::Cons(3, Rc::clone(&a));
+    let c = RcList::Cons(4, Rc::clone(&a));
+
+    let handle = thread::spawn(|| {
+        for i in 1..10 {
+            println!("hi number {} from the spawned thread!", i);
+            thread::sleep(Duration::from_millis(1));
+        }
+    });
+
+    for i in 1..5 {
+        println!("hi number {} from the main thread!", i);
+        thread::sleep(Duration::from_millis(1));
+    }
+
+    handle.join().unwrap();
+}
+
+struct CustomSmartPointer {
+    data: String,
+}
+
+impl Drop for CustomSmartPointer {
+    fn drop(&mut self) {
+        println!("Dropping CustomSmartPointer with data `{}`!", self.data);
+    }
+}
+
+struct MyBox<T>(T);
+
+impl<T> MyBox<T> {
+    fn new(x: T) -> Self {
+        Self(x)
+    }
+}
+
+impl<T> Deref for MyBox<T> {
+    type Target = T;
+
+    fn deref(&self) -> &T {
+        &self.0
+    }
+}
+
+enum RcList {
+    Cons(i32, Rc<RcList>),
+    Nil,
+}
+
+enum List {
+    Cons(i32, Box<List>),
+    Nil,
 }
 
 impl<T, U> Point<T, U> {
@@ -183,8 +272,12 @@ impl Rectangle {
     }
 }
 
+fn hello(name: &str) {
+    println!("Hello, {}!", name);
+}
+
 pub fn add_two(a: i32) -> i32 {
-    a + 3
+    a + 2
 }
 
 #[cfg(test)]
@@ -202,6 +295,7 @@ mod tests {
     }
 
     #[test]
+    #[should_panic]
     fn another() {
         panic!("Make this test fail")
     }
